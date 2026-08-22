@@ -1,0 +1,33 @@
+name: cry-081-editorial
+
+x-application-environment: &application-environment
+  {APP_ENV: production, STORAGE_MODE: postgres, DATABASE_URL: "postgres://editorial:editorial@database:5432/editorial?sslmode=disable", HTTP_ADDRESS: ":8080", ALLOWED_ORIGIN: "${ALLOWED_ORIGIN:-http://localhost:5173}"}
+
+services:
+  database:
+    image: postgres:17-alpine
+    environment: {POSTGRES_DB: "${POSTGRES_DB:-editorial}", POSTGRES_USER: "${POSTGRES_USER:-editorial}", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-editorial}"}
+    healthcheck: {test: "pg_isready --username=$${POSTGRES_USER} --dbname=$${POSTGRES_DB}", start_period: 5s, interval: 3s, timeout: 3s, retries: 20}
+    volumes: ["editorial-data:/var/lib/postgresql/data", "./migrations:/docker-entrypoint-initdb.d:ro"]
+    networks: [editorial-backplane]
+    restart: unless-stopped
+
+  editorial-api:
+    build: .
+    environment: *application-environment
+    depends_on:
+      database: {condition: service_healthy}
+    ports:
+      - {target: 8080, published: 8080, protocol: tcp}
+    healthcheck: {test: "wget --quiet --tries=1 --spider http://localhost:8080/readyz", interval: 10s, timeout: 3s, retries: 6}
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    security_opt: ["no-new-privileges:true"]
+    networks: [editorial-backplane]
+    restart: unless-stopped
+
+networks:
+  editorial-backplane: {name: cry-081-editorial-backplane}
+
+volumes:
+  editorial-data: {name: cry-081-postgres-data}
