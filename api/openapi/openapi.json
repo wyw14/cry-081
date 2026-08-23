@@ -1,0 +1,136 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Editorial Collaboration API",
+    "version": "1.0.0",
+    "description": "投稿、审稿、终审与刊发协作 API"
+  },
+  "servers": [{"url": "/api/v1"}],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "注册平台用户",
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterUser"}}}
+        },
+        "responses": {
+          "201": {"description": "用户已创建"},
+          "422": {"$ref": "#/components/responses/ValidationError"}
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "创建短期访问会话",
+        "responses": {
+          "200": {"description": "会话已创建"},
+          "401": {"$ref": "#/components/responses/Unauthorized"}
+        }
+      }
+    },
+    "/manuscripts": {
+      "get": {
+        "summary": "分页读取稿件工作台",
+        "parameters": [
+          {"name": "cursor", "in": "query", "schema": {"type": "string"}},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}},
+          {"name": "status", "in": "query", "schema": {"type": "string"}},
+          {"name": "section", "in": "query", "schema": {"type": "string"}},
+          {"name": "sort", "in": "query", "schema": {"type": "string", "enum": ["created_at", "updated_at", "status"]}}
+        ],
+        "responses": {
+          "200": {"description": "稿件页"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      },
+      "post": {
+        "summary": "创建稿件草稿",
+        "responses": {
+          "201": {"description": "草稿已创建"},
+          "422": {"$ref": "#/components/responses/ValidationError"}
+        }
+      }
+    },
+    "/manuscripts/{id}/submissions": {
+      "post": {
+        "summary": "固定正文、附件与声明快照并投稿",
+        "parameters": [
+          {"$ref": "#/components/parameters/ResourceID"},
+          {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"description": "投稿快照已创建"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/manuscripts/{id}/assignments": {
+      "post": {
+        "summary": "分派审稿人并执行回避检查",
+        "parameters": [{"$ref": "#/components/parameters/ResourceID"}],
+        "responses": {
+          "201": {"description": "分派已创建"},
+          "403": {"$ref": "#/components/responses/Forbidden"}
+        }
+      }
+    },
+    "/assignments/{id}/reports": {
+      "post": {
+        "summary": "提交评分、结构化意见与匿名意见",
+        "parameters": [{"$ref": "#/components/parameters/ResourceID"}],
+        "responses": {
+          "201": {"description": "审稿意见已保存"},
+          "409": {"$ref": "#/components/responses/Conflict"}
+        }
+      }
+    },
+    "/publications": {
+      "get": {
+        "summary": "公开检索已刊发文章",
+        "parameters": [
+          {"name": "query", "in": "query", "schema": {"type": "string"}},
+          {"name": "section", "in": "query", "schema": {"type": "string"}},
+          {"name": "tag", "in": "query", "schema": {"type": "string"}},
+          {"name": "sort", "in": "query", "schema": {"type": "string", "enum": ["published_at", "title", "issue"]}},
+          {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1}},
+          {"name": "page_size", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}
+        ],
+        "responses": {"200": {"description": "公开文章页"}}
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ResourceID": {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}
+    },
+    "schemas": {
+      "RegisterUser": {
+        "type": "object",
+        "required": ["email", "display_name", "password", "roles"],
+        "properties": {
+          "email": {"type": "string", "format": "email"},
+          "display_name": {"type": "string"},
+          "password": {"type": "string", "minLength": 10, "writeOnly": true},
+          "roles": {"type": "array", "items": {"type": "string", "enum": ["author", "editor", "chief_editor", "section_manager"]}}
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message", "request_id"],
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "request_id": {"type": "string"},
+          "fields": {"type": "array", "items": {"type": "object"}}
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {"description": "参数不合法", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unauthorized": {"description": "未认证", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Forbidden": {"description": "无权限", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Conflict": {"description": "状态或版本冲突", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    }
+  }
+}
