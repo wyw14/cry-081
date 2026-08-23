@@ -90,15 +90,14 @@ func (m *Memory) Remember(ctx context.Context, replay Replay) error {
 }
 
 func normalize(identity Identity) storageKey {
-	operation := operationFamily(identity.Operation)
-	return storageKey{operation: operation, key: strings.TrimSpace(identity.Key)}
+	return storageKey{operation: normalizeOperation(identity.Operation), key: strings.TrimSpace(identity.Key)}
 }
 
-func operationFamily(value string) string {
-	normalized := strings.ToLower(strings.TrimSpace(value))
-	segments := strings.Split(normalized, ":")
-	if len(segments) == 0 {
-		return ""
-	}
-	return strings.TrimSpace(segments[0])
+// normalizeOperation lower-cases and trims the operation so callers do not have
+// to agree on letter case or surrounding whitespace. Unlike a family prefix, it
+// keeps the full operation, including any scope segment such as the manuscript
+// id embedded in "manuscript-submission:<id>". Dropping that segment let two
+// different manuscripts sharing one idempotency key collide on the same replay.
+func normalizeOperation(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
