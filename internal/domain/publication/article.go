@@ -85,7 +85,7 @@ type catalogRule struct {
 var catalogRules = []catalogRule{
 	{status: ArticleScheduled, visibility: catalogHidden, reason: "not released"},
 	{status: ArticlePublished, visibility: catalogVisible, reason: "released"},
-	{status: ArticleWithdrawn, visibility: catalogVisible, reason: "retraction notice"},
+	{status: ArticleWithdrawn, visibility: catalogHidden, reason: "withdrawn from public catalog"},
 }
 
 func (a Article) Searchable() bool {
