@@ -56,7 +56,11 @@ func (l SubmissionVersionLock) AppliesTo(manuscriptID string, versionNumber int6
 	if !l.Valid() || manuscriptID != l.ManuscriptID {
 		return false
 	}
-	return versionNumber >= l.FromVersion
+	// A submission locks only the exact version that was submitted so that
+	// later revision drafts (whose numbers are always greater than any
+	// submitted version) remain editable. The historical submitted version
+	// itself is still protected from re-editing.
+	return versionNumber == l.FromVersion
 }
 
 func NewSubmissionSnapshot(id, manuscriptID, authorID string, version DraftVersion, declaration Declaration, now time.Time) (SubmissionSnapshot, error) {
