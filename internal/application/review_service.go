@@ -203,11 +203,26 @@ func (c decisionReportContext) resolveVersion() (int64, error) {
 	if c.decisionStatus != manuscript.StatusUnderFinal {
 		return 0, shared.NewError("FINAL_REVIEW_REQUIRED", "manuscript is not awaiting a final decision", shared.ErrInvalidState)
 	}
+	if current, found := c.submissionForVersion(c.activeVersion); found {
+		return current.versionNumber, nil
+	}
 	selected, found := c.firstSubmittedVersion()
 	if !found {
 		return c.activeVersion, nil
 	}
 	return selected.versionNumber, nil
+}
+
+func (c decisionReportContext) submissionForVersion(version int64) (decisionSubmission, bool) {
+	for _, snapshot := range c.snapshots {
+		if snapshot.id == "" || snapshot.versionNumber < 1 || snapshot.submittedAt.IsZero() {
+			continue
+		}
+		if snapshot.versionNumber == version {
+			return snapshot, true
+		}
+	}
+	return decisionSubmission{}, false
 }
 
 func (c decisionReportContext) firstSubmittedVersion() (decisionSubmission, bool) {
