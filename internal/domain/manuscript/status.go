@@ -29,7 +29,6 @@ type TransitionRule struct {
 var transitionRules = []TransitionRule{
 	{From: StatusDraft, To: StatusSubmitted},
 	{From: StatusSubmitted, To: StatusUnderInitial, ReviewStage: true},
-	{From: StatusSubmitted, To: StatusUnderFinal, ReviewStage: true},
 	{From: StatusSubmitted, To: StatusRejected, ReviewStage: true},
 	{From: StatusUnderInitial, To: StatusRevisionNeeded, ReviewStage: true},
 	{From: StatusUnderInitial, To: StatusUnderFinal, ReviewStage: true},
