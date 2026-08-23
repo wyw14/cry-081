@@ -1,0 +1,31 @@
+services:
+  editorial-api:
+    environment:
+      APP_ENV: production
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  database:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
